@@ -1,126 +1,171 @@
 #include <Arduino.h>
-#include <SPI.h>
 #include <TFT_eSPI.h>
 
 #include "config.h"
 #include "keypad.h"
 #include "touch_calibration.h"
 
+
+// ============================================================
+// TFT
+// ============================================================
+
 TFT_eSPI tft = TFT_eSPI();
 
-unsigned long bootTime = 0;
+
+// ============================================================
+// SETUP
+// ============================================================
 
 void setup()
 {
-  bootTime = millis();
+    Serial.begin(115200);
 
-  Serial.begin(115200);
-  delay(100);
+    delay(100);
 
-  Serial.println();
-  Serial.println("[SYS] BO4RD KEYPAD v1.0");
+    Serial.println();
+    Serial.println("[SYS] BO4RD KEYPAD v1.0");
 
-  tft.init();
-  tft.setRotation(TFT_ROTATION);
+    unsigned long startTime = millis();
 
-  Serial.printf(
-    "[TFT] +%lums | init OK | rot=%u | size=%ux%u\n",
-    millis(),
-    TFT_ROTATION,
-    tft.width(),
-    tft.height()
-  );
+    // --------------------------------------------------------
+    // TFT
+    // --------------------------------------------------------
 
-  touch_calibrate();
+    tft.init();
+    tft.setRotation(TFT_ROTATION);
 
-  tft.fillScreen(COLOR_BACKGROUND);
+    Serial.printf(
+        "[TFT] +%lums | init OK | rot=%d | size=%dx%d\n",
+        millis() - startTime,
+        TFT_ROTATION,
+        tft.width(),
+        tft.height()
+    );
 
-  tft.setFreeFont(&FreeMonoBold9pt7b);
-  tft.setTextColor(COLOR_ACCENT, COLOR_BACKGROUND);
-  tft.setTextDatum(TL_DATUM);
+    // --------------------------------------------------------
+    // TOUCH
+    // --------------------------------------------------------
 
-  tft.drawString(
-    "3x0c3t BO4RD",
-    HEADER_X,
-    HEADER_Y
-  );
+    touch_calibrate();
 
-  tft.setFreeFont(&FreeMonoBold9pt7b);
-  tft.setTextColor(COLOR_TEXT_DIM, COLOR_BACKGROUND);
-  tft.setTextDatum(TR_DATUM);
+    // --------------------------------------------------------
+    // INTERFACE
+    // --------------------------------------------------------
 
-  tft.drawString(
-    "v1.0",
-    HEADER_X + HEADER_W,
-    HEADER_Y
-  );
+    tft.fillScreen(COLOR_BACKGROUND);
 
-  tft.drawFastHLine(
-    HEADER_X,
-    HEADER_Y + HEADER_H,
-    HEADER_W,
-    COLOR_ACCENT
-  );
+    Serial.printf(
+        "[UI] +%lums | background OK\n",
+        millis() - startTime
+    );
 
-  tft.setTextDatum(TL_DATUM);
-  tft.setTextColor(COLOR_TEXT_DIM, COLOR_BACKGROUND);
+    // --------------------------------------------------------
+    // HEADER
+    // --------------------------------------------------------
 
-  tft.drawString(
-    "KEYPAD",
-    HEADER_X,
-    HEADER_Y + 17
-  );
+    tft.fillRect(
+        HEADER_X,
+        HEADER_Y,
+        HEADER_W,
+        HEADER_H,
+        COLOR_BACKGROUND
+    );
 
-  Serial.printf(
-    "[UI] +%lums | header OK\n",
-    millis()
-  );
+    tft.setTextDatum(MC_DATUM);
+    tft.setTextFont(2);
+    tft.setTextColor(
+        COLOR_ACCENT,
+        COLOR_BACKGROUND
+    );
 
-  updateDisplay();
+    tft.drawString(
+        "KEYPAD",
+        SCREEN_WIDTH / 2,
+        HEADER_Y + HEADER_H / 2,
+        2
+    );
 
-  tft.drawFastHLine(
-    DISPLAY_X,
-    DISPLAY_Y + DISPLAY_H + 3,
-    DISPLAY_W,
-    TFT_DARKGREY
-  );
+    tft.drawFastHLine(
+        0,
+        HEADER_LINE_Y,
+        SCREEN_WIDTH,
+        COLOR_PANEL
+    );
 
-  drawKeypad();
+    Serial.printf(
+        "[UI] +%lums | header OK\n",
+        millis() - startTime
+    );
 
-  status("READY");
+    // --------------------------------------------------------
+    // ZONE AFFICHAGE
+    // --------------------------------------------------------
 
-  Serial.printf(
-    "[UI] +%lums | display OK\n",
-    millis()
-  );
+    tft.fillRoundRect(
+        DISPLAY_X,
+        DISPLAY_Y,
+        DISPLAY_W,
+        DISPLAY_H,
+        5,
+        COLOR_PANEL
+    );
 
-  Serial.printf(
-    "[SYS] READY | boot=%lums\n",
-    millis()
-  );
+    tft.drawRoundRect(
+        DISPLAY_X,
+        DISPLAY_Y,
+        DISPLAY_W,
+        DISPLAY_H,
+        5,
+        COLOR_ACCENT
+    );
+
+    Serial.printf(
+        "[UI] +%lums | display OK | x=%d y=%d w=%d h=%d\n",
+        millis() - startTime,
+        DISPLAY_X,
+        DISPLAY_Y,
+        DISPLAY_W,
+        DISPLAY_H
+    );
+
+    // --------------------------------------------------------
+    // KEYPAD
+    // --------------------------------------------------------
+
+    drawKeypad();
+
+    Serial.printf(
+        "[UI] +%lums | keypad OK\n",
+        millis() - startTime
+    );
+
+    Serial.printf(
+        "[SYS] READY | total=%lums\n",
+        millis() - startTime
+    );
 }
+
+
+// ============================================================
+// LOOP
+// ============================================================
 
 void loop()
 {
-  uint16_t t_x = 0;
-  uint16_t t_y = 0;
+    uint16_t t_x = 0;
+    uint16_t t_y = 0;
 
-  bool pressed = tft.getTouch(&t_x, &t_y);
-
-  if (pressed)
-  {
-    Serial.printf(
-      "[TOUCH] x=%u y=%u\n",
-      t_x,
-      t_y
+    bool pressed = tft.getTouch(
+        &t_x,
+        &t_y
     );
-  }
 
-  updateKeypad(
-    t_x,
-    t_y,
-    pressed
-  );
+    updateKeypad(
+        t_x,
+        t_y,
+        pressed
+    );
 
-  delay(10);
+    delay(10);
 }
