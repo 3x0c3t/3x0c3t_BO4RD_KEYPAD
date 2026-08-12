@@ -1,50 +1,134 @@
-// KEYPAD.ino
+#include <FS.h>
+#include <SPI.h>
+#include <TFT_eSPI.h>
 
-#include "settings.h"
-#include "display.h"
-#include "touch.h"
+#include "config.h"
 #include "keypad.h"
-#include "calibration.h"
+#include "touch_calibration.h"
 
-// ============================================================
-// SETUP
-// ============================================================
+TFT_eSPI tft = TFT_eSPI();
+
+char numberBuffer[NUM_LEN + 1] = "";
+uint8_t numberIndex = 0;
 
 void setup()
 {
-    Serial.begin(115200);
+  Serial.begin(9600);
 
-    delay(200);
+  tft.init();
 
-    Serial.println();
-    Serial.println("==============================");
-    Serial.println("  3x0c3t BO4RD KEYPAD v1.0");
-    Serial.println("==============================");
+  tft.setRotation(0);
 
-    Serial.println("[TFT] Init");
-    displayInit();
-    Serial.println("[TFT] OK");
+  touch_calibrate();
 
-    Serial.println("[TOUCH] Init");
-    touchInit();
-    Serial.println("[TOUCH] OK");
+  tft.fillScreen(TFT_BLACK);
 
-    Serial.println("[KEYPAD] Init");
-    keypadInit();
-    Serial.println("[KEYPAD] OK");
+  tft.fillRect(0, 0, 240, 320, TFT_DARKGREY);
 
-    Serial.println("==============================");
-    Serial.println("  SYSTEM READY");
-    Serial.println("==============================");
+  tft.fillRect(DISP_X, DISP_Y, DISP_W, DISP_H, TFT_BLACK);
+  tft.drawRect(DISP_X, DISP_Y, DISP_W, DISP_H, TFT_WHITE);
+
+  drawKeypad();
 }
-
-// ============================================================
-// LOOP
-// ============================================================
 
 void loop()
 {
-    keypadUpdate();
+  uint16_t t_x = 0;
+  uint16_t t_y = 0;
 
-    delay(5);
+  bool pressed = tft.getTouch(&t_x, &t_y);
+
+  for (uint8_t b = 0; b < 15; b++)
+  {
+    if (pressed && key[b].contains(t_x, t_y))
+    {
+      key[b].press(true);
+    }
+    else
+    {
+      key[b].press(false);
+    }
+  }
+
+  for (uint8_t b = 0; b < 15; b++)
+  {
+    if (b < 3)
+    {
+      tft.setFreeFont(LABEL1_FONT);
+    }
+    else
+    {
+      tft.setFreeFont(LABEL2_FONT);
+    }
+
+    if (key[b].justReleased())
+    {
+      key[b].drawButton();
+    }
+
+    if (key[b].justPressed())
+    {
+      key[b].drawButton(true);
+
+      if (b >= 3)
+      {
+        if (numberIndex < NUM_LEN)
+        {
+          numberBuffer[numberIndex] = keyLabel[b][0];
+          numberIndex++;
+          numberBuffer[numberIndex] = 0;
+        }
+
+        status("");
+      }
+
+      if (b == 1)
+      {
+        numberBuffer[numberIndex] = 0;
+
+        if (numberIndex > 0)
+        {
+          numberIndex--;
+          numberBuffer[numberIndex] = 0;
+        }
+
+        status("");
+      }
+
+      if (b == 2)
+      {
+        status("Sent value to serial port");
+        Serial.println(numberBuffer);
+      }
+
+      if (b == 0)
+      {
+        status("Value cleared");
+
+        numberIndex = 0;
+
+        numberBuffer[numberIndex] = 0;
+      }
+
+      tft.setTextDatum(TL_DATUM);
+      tft.setFreeFont(&FreeSans18pt7b);
+      tft.setTextColor(DISP_TCOLOR);
+
+      int xwidth = tft.drawString(
+        numberBuffer,
+        DISP_X + 4,
+        DISP_Y + 12
+      );
+
+      tft.fillRect(
+        DISP_X + 4 + xwidth,
+        DISP_Y + 1,
+        DISP_W - xwidth - 5,
+        DISP_H - 2,
+        TFT_BLACK
+      );
+
+      delay(10);
+    }
+  }
 }

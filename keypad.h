@@ -1,15 +1,16 @@
-// keypad.h
 #ifndef KEYPAD_H
 #define KEYPAD_H
 
-#include <Arduino.h>
+#include <TFT_eSPI.h>
 
-void keypadInit();
+extern TFT_eSPI_Button key[15];
 
-void keypadUpdate();
+extern char keyLabel[15][5];
 
-String keypadGetValue();
+extern uint16_t keyColor[15];
 
-void keypadClear();
+void drawKeypad();
+
+void status(const char *msg);
 
 #endif

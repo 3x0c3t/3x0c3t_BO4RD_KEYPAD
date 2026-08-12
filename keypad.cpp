@@ -1,168 +1,92 @@
 #include "keypad.h"
-#include "display.h"
-#include "touch.h"
-#include "settings.h"
+#include "config.h"
 
-String keypadValue = "";
+TFT_eSPI_Button key[15];
 
-unsigned long lastTouch = 0;
-
-#define TOUCH_DEBOUNCE 180
-
-// ============================================================
-// DECLARATIONS
-// ============================================================
-
-static void processKey(int row, int col);
-
-// ============================================================
-// INIT
-// ============================================================
-
-void keypadInit()
+char keyLabel[15][5] =
 {
-    keypadValue = "";
+  "New",
+  "Del",
+  "Send",
+  "1",
+  "2",
+  "3",
+  "4",
+  "5",
+  "6",
+  "7",
+  "8",
+  "9",
+  ".",
+  "0",
+  "#"
+};
 
-    displayDrawResult(keypadValue);
+uint16_t keyColor[15] =
+{
+  TFT_RED,
+  TFT_DARKGREY,
+  TFT_DARKGREEN,
+  TFT_BLUE,
+  TFT_BLUE,
+  TFT_BLUE,
+  TFT_BLUE,
+  TFT_BLUE,
+  TFT_BLUE,
+  TFT_BLUE,
+  TFT_BLUE,
+  TFT_BLUE,
+  TFT_BLUE,
+  TFT_BLUE,
+  TFT_BLUE
+};
+
+void drawKeypad()
+{
+  for (uint8_t row = 0; row < 5; row++)
+  {
+    for (uint8_t col = 0; col < 3; col++)
+    {
+      uint8_t b = col + row * 3;
+
+      if (b < 3)
+      {
+        tft.setFreeFont(LABEL1_FONT);
+      }
+      else
+      {
+        tft.setFreeFont(LABEL2_FONT);
+      }
+
+      key[b].initButton(
+        &tft,
+        KEY_X + col * (KEY_W + KEY_SPACING_X),
+        KEY_Y + row * (KEY_H + KEY_SPACING_Y),
+        KEY_W,
+        KEY_H,
+        TFT_WHITE,
+        keyColor[b],
+        TFT_WHITE,
+        keyLabel[b],
+        KEY_TEXTSIZE
+      );
+
+      key[b].drawButton();
+    }
+  }
 }
 
-// ============================================================
-// CLEAR
-// ============================================================
-
-void keypadClear()
+void status(const char *msg)
 {
-    keypadValue = "";
+  tft.setTextPadding(240);
 
-    displayDrawResult(keypadValue);
-}
+  tft.setTextColor(TFT_WHITE, TFT_DARKGREY);
 
-// ============================================================
-// VALEUR
-// ============================================================
+  tft.setTextFont(0);
 
-String keypadGetValue()
-{
-    return keypadValue;
-}
+  tft.setTextDatum(TC_DATUM);
 
-// ============================================================
-// DETECTION TOUCHE
-// ============================================================
+  tft.setTextSize(1);
 
-void keypadUpdate()
-{
-    if (millis() - lastTouch < TOUCH_DEBOUNCE)
-        return;
-
-    int16_t x;
-    int16_t y;
-
-    if (!touchRead(x, y))
-        return;
-
-    lastTouch = millis();
-
-    // --------------------------------------------------------
-    // Recherche du bouton
-    // --------------------------------------------------------
-
-    for (int row = 0; row < KEY_ROWS; row++)
-    {
-        for (int col = 0; col < KEY_COLS; col++)
-        {
-            int keyX =
-                KEY_START_X +
-                col * (KEY_W + KEY_GAP_X);
-
-            int keyY =
-                KEY_START_Y +
-                row * (KEY_H + KEY_GAP_Y);
-
-            if (
-                x >= keyX &&
-                x < keyX + KEY_W &&
-                y >= keyY &&
-                y < keyY + KEY_H
-            )
-            {
-                processKey(row, col);
-                return;
-            }
-        }
-    }
-}
-
-// ============================================================
-// TRAITEMENT TOUCHE
-// ============================================================
-
-static void processKey(int row, int col)
-{
-    const char *keys[KEY_ROWS][KEY_COLS] =
-    {
-        { "1", "2", "3" },
-        { "4", "5", "6" },
-        { "7", "8", "9" },
-        { "*", "0", "#" },
-        { "C", "OK", "<" }
-    };
-
-    String key = keys[row][col];
-
-    // --------------------------------------------------------
-    // CLEAR
-    // --------------------------------------------------------
-
-    if (key == "C")
-    {
-        keypadClear();
-
-        Serial.println("[KEYPAD] CLEAR");
-
-        return;
-    }
-
-    // --------------------------------------------------------
-    // RETOUR ARRIERE
-    // --------------------------------------------------------
-
-    if (key == "<")
-    {
-        if (keypadValue.length() > 0)
-        {
-            keypadValue.remove(
-                keypadValue.length() - 1
-            );
-
-            displayDrawResult(keypadValue);
-        }
-
-        Serial.println("[KEYPAD] BACK");
-
-        return;
-    }
-
-    // --------------------------------------------------------
-    // VALIDATION
-    // --------------------------------------------------------
-
-    if (key == "OK")
-    {
-        Serial.print("[KEYPAD] OK : ");
-        Serial.println(keypadValue);
-
-        return;
-    }
-
-    // --------------------------------------------------------
-    // CARACTERE
-    // --------------------------------------------------------
-
-    keypadValue += key;
-
-    displayDrawResult(keypadValue);
-
-    Serial.print("[KEYPAD] ");
-    Serial.println(key);
+  tft.drawString(msg, STATUS_X, STATUS_Y);
 }
