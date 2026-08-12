@@ -5,11 +5,21 @@
 
 #define TFT_ROTATION 2
 
-#define SCREEN_WIDTH 240
+#define SCREEN_WIDTH  240
 #define SCREEN_HEIGHT 320
 
-#define CALIBRATION_FILE "/TouchCalData1"
+#define COLOR_BACKGROUND TFT_BLACK
+#define COLOR_PANEL      TFT_DARKGREY
+#define COLOR_TEXT       TFT_WHITE
+#define COLOR_TEXT_DIM   TFT_LIGHTGREY
+#define COLOR_ACCENT     TFT_CYAN
+#define COLOR_DATA       TFT_CYAN
+#define COLOR_OK         TFT_GREEN
+#define COLOR_WARNING    TFT_ORANGE
+#define COLOR_ERROR      TFT_RED
+#define COLOR_ACTION     TFT_LIGHTGREY
 
+#define CALIBRATION_FILE "/TouchCalData1"
 #define REPEAT_CAL false
 
 #define KEY_X 40
@@ -31,7 +41,7 @@
 #define DISP_H 50
 
 #define DISP_TSIZE 3
-#define DISP_TCOLOR TFT_CYAN
+#define DISP_TCOLOR COLOR_DATA
 
 #define NUM_LEN 12
 
