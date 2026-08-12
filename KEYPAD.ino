@@ -1,97 +1,50 @@
-#include <Arduino.h>
-#include <TFT_eSPI.h>
+// KEYPAD.ino
 
 #include "settings.h"
 #include "display.h"
 #include "touch.h"
 #include "keypad.h"
+#include "calibration.h"
 
-TFT_eSPI tft = TFT_eSPI();
+// ============================================================
+// SETUP
+// ============================================================
 
 void setup()
 {
-    Serial.begin(
-        SERIAL_BAUD
-    );
+    Serial.begin(115200);
 
-    delay(300);
+    delay(200);
 
     Serial.println();
+    Serial.println("==============================");
+    Serial.println("  3x0c3t BO4RD KEYPAD v1.0");
+    Serial.println("==============================");
 
-    Serial.println(
-        "=============================="
-    );
+    Serial.println("[TFT] Init");
+    displayInit();
+    Serial.println("[TFT] OK");
 
-    Serial.println(
-        "       3x0c3t BO4RD"
-    );
-
-    Serial.println(
-        "          KEYPAD"
-    );
-
-    Serial.println(
-        "=============================="
-    );
-
-    // --------------------------------------------------------
-    // TFT
-    // --------------------------------------------------------
-
-    Serial.println(
-        "[TFT] Initialisation..."
-    );
-
-    tft.init();
-
-    tft.setRotation(
-        TFT_ROTATION
-    );
-
-    tft.fillScreen(
-        COLOR_BACKGROUND
-    );
-
-    Serial.println(
-        "[TFT] OK"
-    );
-
-    // --------------------------------------------------------
-    // TOUCH
-    // --------------------------------------------------------
-
+    Serial.println("[TOUCH] Init");
     touchInit();
+    Serial.println("[TOUCH] OK");
 
-    // --------------------------------------------------------
-    // KEYPAD
-    // --------------------------------------------------------
-
+    Serial.println("[KEYPAD] Init");
     keypadInit();
+    Serial.println("[KEYPAD] OK");
 
-    Serial.println();
-
-    Serial.println(
-        "=============================="
-    );
-
-    Serial.println(
-        "       KEYPAD READY"
-    );
-
-    Serial.println(
-        "=============================="
-    );
-
-    Serial.println(
-        "[TOUCH] Touchez un bouton"
-    );
-
-    Serial.println();
+    Serial.println("==============================");
+    Serial.println("  SYSTEM READY");
+    Serial.println("==============================");
 }
+
+// ============================================================
+// LOOP
+// ============================================================
 
 void loop()
 {
-    keypadLoop();
+    keypadUpdate();
 
-    delay(10);
+    delay(5);
 }

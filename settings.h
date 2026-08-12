@@ -1,49 +1,90 @@
+// settings.h
 #ifndef SETTINGS_H
 #define SETTINGS_H
 
 #include <Arduino.h>
-#include <TFT_eSPI.h>
 
-#define SCREEN_WIDTH 240
-#define SCREEN_HEIGHT 320
+// ============================================================
+// 3x0c3t BO4RD KEYPAD v1.0
+// ESP8266 + ILI9341 + XPT2046
+// ============================================================
 
-#define TFT_ROTATION 2
+// ============================================================
+// TFT
+// ============================================================
 
-#define SERIAL_BAUD 115200
+#define TFT_WIDTH     240
+#define TFT_HEIGHT    320
+#define TFT_ROTATION  2
 
-#define CALIBRATION_FILE "/TouchCalData1"
+#define TFT_CS   15   // D8
+#define TFT_DC    2   // D4
+#define TFT_RST  16   // D0
 
-#define REPEAT_CAL false
+// ============================================================
+// TOUCH
+// ============================================================
 
-#define COLOR_BACKGROUND TFT_BLACK
-#define COLOR_PANEL TFT_DARKGREY
-#define COLOR_BORDER TFT_DARKGREY
-#define COLOR_TEXT TFT_WHITE
-#define COLOR_ACCENT TFT_GREEN
-#define COLOR_TOUCH TFT_RED
-#define COLOR_NUMBER TFT_CYAN
+#define TOUCH_CS   0   // D3
+#define TOUCH_IRQ  5   // D1
 
-#define HEADER_X 0
-#define HEADER_Y 0
-#define HEADER_W SCREEN_WIDTH
-#define HEADER_HEIGHT 32
+// ============================================================
+// SPI
+// ============================================================
 
-#define VALUE_X 10
-#define VALUE_Y 42
-#define VALUE_W 220
-#define VALUE_HEIGHT 48
+#define SPI_SCK   14   // D5
+#define SPI_MISO  12   // D6
+#define SPI_MOSI  13   // D7
 
-#define KEY_COUNT 15
+// ============================================================
+// COULEURS RGB565
+// ============================================================
 
-#define KEY_W 60
-#define KEY_H 38
+#define COLOR_BG          0x1082
+#define COLOR_HEADER      0x2124
+#define COLOR_RESULT      0x0000
 
-#define KEY_SPACING_X 10
-#define KEY_SPACING_Y 10
+#define COLOR_KEY         0x39C7
+#define COLOR_KEY_ALT     0x528A
+#define COLOR_KEY_PRESS   0x07E0
 
-#define KEY_START_X 15
-#define KEY_START_Y 100
+#define COLOR_TEXT        0xFFFF
+#define COLOR_TEXT_ALT    0xFFE0
+#define COLOR_ACCENT      0x07FF
 
-#define NUM_LEN 12
+#define COLOR_BORDER      0x8410
+#define COLOR_SEPARATOR   0x630C
+
+// ============================================================
+// ZONE RESULTAT
+// ============================================================
+
+#define RESULT_X          8
+#define RESULT_Y          8
+#define RESULT_W          224
+#define RESULT_H          48
+
+// ============================================================
+// CLAVIER
+// ============================================================
+
+#define KEY_COLS          3
+#define KEY_ROWS          5
+
+#define KEY_W             62
+#define KEY_H             28
+
+#define KEY_GAP_X         8
+#define KEY_GAP_Y         5
+
+#define KEY_START_X       8
+#define KEY_START_Y       68
+
+// ============================================================
+// TEXTE
+// ============================================================
+
+#define RESULT_TEXT_SIZE  3
+#define KEY_TEXT_SIZE     2
 
 #endif

@@ -1,18 +1,31 @@
-#ifndef DISPLAY_MODULE_H
-#define DISPLAY_MODULE_H
+#ifndef DISPLAY_H
+#define DISPLAY_H
 
 #include <Arduino.h>
-#include <TFT_eSPI.h>
+#include <SPI.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_ILI9341.h>
 
-extern TFT_eSPI tft;
+void displayInit();
 
-void drawCalibrationScreen();
-void drawCalibrationComplete();
+void displayClear();
 
-void drawInterface();
-void drawHeader();
-void drawValueDisplay();
-void updateDisplay();
-void drawStatus(const char *msg);
+void displayDrawHeader();
+
+void displayDrawResult(
+    const String &value
+);
+
+void displayDrawKey(
+    int x,
+    int y,
+    int w,
+    int h,
+    const String &label,
+    uint16_t color,
+    uint16_t textColor
+);
+
+void displayDrawKeyboard();
 
 #endif

@@ -1,17 +1,15 @@
-#ifndef KEYPAD_MODULE_H
-#define KEYPAD_MODULE_H
+// keypad.h
+#ifndef KEYPAD_H
+#define KEYPAD_H
 
 #include <Arduino.h>
 
 void keypadInit();
-void keypadLoop();
 
-void drawKeypad();
+void keypadUpdate();
 
-void handleKey(
-    uint8_t index
-);
+String keypadGetValue();
 
-const char *getNumberBuffer();
+void keypadClear();
 
 #endif

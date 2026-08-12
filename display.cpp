@@ -1,234 +1,242 @@
 #include "display.h"
 #include "settings.h"
-#include "keypad.h"
 
-void drawCalibrationScreen()
+// ============================================================
+// TFT
+// ============================================================
+
+Adafruit_ILI9341 tft(
+    TFT_CS,
+    TFT_DC,
+    TFT_RST
+);
+
+// ============================================================
+// INITIALISATION
+// ============================================================
+
+void displayInit()
 {
-    tft.fillScreen(TFT_BLACK);
+    tft.begin();
 
-    tft.setTextDatum(MC_DATUM);
+    tft.setRotation(TFT_ROTATION);
 
-    tft.setTextFont(2);
+    tft.fillScreen(COLOR_BG);
 
-    tft.setTextColor(
-        TFT_GREEN,
-        TFT_BLACK
-    );
-
-    tft.drawString(
-        "CALIBRATION",
-        SCREEN_WIDTH / 2,
-        60
-    );
-
-    tft.setTextFont(1);
-
-    tft.setTextColor(
-        TFT_WHITE,
-        TFT_BLACK
-    );
-
-    tft.drawString(
-        "Touchez les points",
-        SCREEN_WIDTH / 2,
-        100
-    );
-
-    tft.drawString(
-        "indiques a l'ecran",
-        SCREEN_WIDTH / 2,
-        120
-    );
+    displayDrawHeader();
+    displayDrawKeyboard();
 }
 
-void drawCalibrationComplete()
+// ============================================================
+// ECRAN VIDE
+// ============================================================
+
+void displayClear()
 {
-    tft.fillScreen(TFT_BLACK);
-
-    tft.drawRect(
-        10,
-        10,
-        SCREEN_WIDTH - 20,
-        SCREEN_HEIGHT - 20,
-        TFT_GREEN
-    );
-
-    tft.setTextDatum(MC_DATUM);
-
-    tft.setTextFont(2);
-
-    tft.setTextColor(
-        TFT_GREEN,
-        TFT_BLACK
-    );
-
-    tft.drawString(
-        "TOUCH OK",
-        SCREEN_WIDTH / 2,
-        110
-    );
-
-    tft.setTextFont(1);
-
-    tft.setTextColor(
-        TFT_WHITE,
-        TFT_BLACK
-    );
-
-    tft.drawString(
-        "Calibration terminee",
-        SCREEN_WIDTH / 2,
-        145
-    );
-
-    tft.setTextColor(
-        TFT_CYAN,
-        TFT_BLACK
-    );
-
-    tft.drawString(
-        "KEYPAD",
-        SCREEN_WIDTH / 2,
-        180
-    );
-
-    delay(1000);
+    tft.fillScreen(COLOR_BG);
 }
 
-void drawInterface()
+// ============================================================
+// ZONE RESULTAT
+// ============================================================
+
+void displayDrawHeader()
 {
-    tft.fillScreen(
-        COLOR_BACKGROUND
-    );
-
-    drawHeader();
-
-    drawValueDisplay();
-
-    drawStatus("Pret");
-}
-
-void drawHeader()
-{
+    // Zone complète
     tft.fillRoundRect(
-        HEADER_X,
-        HEADER_Y,
-        HEADER_W,
-        HEADER_HEIGHT,
-        5,
-        COLOR_PANEL
+        RESULT_X,
+        RESULT_Y,
+        RESULT_W,
+        RESULT_H,
+        4,
+        COLOR_RESULT
     );
 
+    // Bordure
     tft.drawRoundRect(
-        HEADER_X,
-        HEADER_Y,
-        HEADER_W,
-        HEADER_HEIGHT,
-        5,
+        RESULT_X,
+        RESULT_Y,
+        RESULT_W,
+        RESULT_H,
+        4,
         COLOR_BORDER
     );
 
-    tft.setTextDatum(MC_DATUM);
+    // Petit titre
+    tft.setTextColor(COLOR_ACCENT);
+    tft.setTextSize(1);
 
-    tft.setTextFont(2);
-
-    tft.setTextColor(
-        COLOR_ACCENT,
-        COLOR_PANEL
+    tft.setCursor(
+        RESULT_X + 6,
+        RESULT_Y + 5
     );
 
-    tft.drawString(
-        "3x0c3t KEYPAD",
-        SCREEN_WIDTH / 2,
-        HEADER_HEIGHT / 2
-    );
+    tft.print("RESULTAT");
 }
 
-void drawValueDisplay()
+// ============================================================
+// AFFICHAGE RESULTAT
+// ============================================================
+
+void displayDrawResult(const String &value)
 {
-    tft.fillRoundRect(
-        VALUE_X,
-        VALUE_Y,
-        VALUE_W,
-        VALUE_HEIGHT,
-        6,
-        TFT_BLACK
-    );
-
-    tft.drawRoundRect(
-        VALUE_X,
-        VALUE_Y,
-        VALUE_W,
-        VALUE_HEIGHT,
-        6,
-        COLOR_BORDER
-    );
-
-    tft.setTextDatum(MR_DATUM);
-
-    tft.setTextFont(4);
-
-    tft.setTextColor(
-        COLOR_NUMBER,
-        TFT_BLACK
-    );
-
-    tft.drawString(
-        getNumberBuffer(),
-        VALUE_X + VALUE_W - 10,
-        VALUE_Y + VALUE_HEIGHT / 2
-    );
-}
-
-void updateDisplay()
-{
-    tft.fillRoundRect(
-        VALUE_X + 1,
-        VALUE_Y + 1,
-        VALUE_W - 2,
-        VALUE_HEIGHT - 2,
-        5,
-        TFT_BLACK
-    );
-
-    tft.setTextDatum(MR_DATUM);
-
-    tft.setTextFont(4);
-
-    tft.setTextColor(
-        COLOR_NUMBER,
-        TFT_BLACK
-    );
-
-    tft.drawString(
-        getNumberBuffer(),
-        VALUE_X + VALUE_W - 10,
-        VALUE_Y + VALUE_HEIGHT / 2
-    );
-}
-
-void drawStatus(const char *msg)
-{
+    // Efface uniquement la partie valeur
     tft.fillRect(
+        RESULT_X + 3,
+        RESULT_Y + 18,
+        RESULT_W - 6,
+        RESULT_H - 21,
+        COLOR_RESULT
+    );
+
+    tft.setTextColor(COLOR_TEXT);
+    tft.setTextSize(RESULT_TEXT_SIZE);
+
+    int16_t x1;
+    int16_t y1;
+
+    uint16_t w;
+    uint16_t h;
+
+    tft.getTextBounds(
+        value,
         0,
-        298,
-        SCREEN_WIDTH,
-        22,
-        TFT_BLACK
+        0,
+        &x1,
+        &y1,
+        &w,
+        &h
     );
 
-    tft.setTextDatum(MC_DATUM);
+    int16_t x =
+        RESULT_X +
+        (RESULT_W - w) / 2;
 
-    tft.setTextFont(1);
+    int16_t y =
+        RESULT_Y +
+        RESULT_H -
+        h -
+        5;
 
-    tft.setTextColor(
-        COLOR_ACCENT,
-        TFT_BLACK
+    tft.setCursor(x, y);
+
+    tft.print(value);
+}
+
+// ============================================================
+// DESSIN D'UNE TOUCHE
+// ============================================================
+
+void displayDrawKey(
+    int x,
+    int y,
+    int w,
+    int h,
+    const String &label,
+    uint16_t color,
+    uint16_t textColor
+)
+{
+    // Fond
+    tft.fillRoundRect(
+        x,
+        y,
+        w,
+        h,
+        4,
+        color
     );
 
-    tft.drawString(
-        msg,
-        SCREEN_WIDTH / 2,
-        309
+    // Bordure
+    tft.drawRoundRect(
+        x,
+        y,
+        w,
+        h,
+        4,
+        COLOR_BORDER
     );
+
+    // Texte
+    tft.setTextColor(textColor);
+    tft.setTextSize(KEY_TEXT_SIZE);
+
+    int16_t x1;
+    int16_t y1;
+
+    uint16_t tw;
+    uint16_t th;
+
+    tft.getTextBounds(
+        label,
+        0,
+        0,
+        &x1,
+        &y1,
+        &tw,
+        &th
+    );
+
+    int16_t tx =
+        x +
+        (w - tw) / 2;
+
+    int16_t ty =
+        y +
+        (h - th) / 2 -
+        y1;
+
+    tft.setCursor(tx, ty);
+
+    tft.print(label);
+}
+
+// ============================================================
+// CLAVIER
+// ============================================================
+
+void displayDrawKeyboard()
+{
+    const char *keys[KEY_ROWS][KEY_COLS] =
+    {
+        { "1", "2", "3" },
+        { "4", "5", "6" },
+        { "7", "8", "9" },
+        { "*", "0", "#" },
+        { "C", "OK", "<" }
+    };
+
+    for (int row = 0; row < KEY_ROWS; row++)
+    {
+        for (int col = 0; col < KEY_COLS; col++)
+        {
+            int x =
+                KEY_START_X +
+                col * (KEY_W + KEY_GAP_X);
+
+            int y =
+                KEY_START_Y +
+                row * (KEY_H + KEY_GAP_Y);
+
+            uint16_t color = COLOR_KEY;
+            uint16_t textColor = COLOR_TEXT;
+
+            // Ligne de fonctions
+            if (row == 4)
+            {
+                color = COLOR_KEY_ALT;
+                textColor = COLOR_TEXT_ALT;
+            }
+
+            displayDrawKey(
+                x,
+                y,
+                KEY_W,
+                KEY_H,
+                keys[row][col],
+                color,
+                textColor
+            );
+        }
+    }
 }
