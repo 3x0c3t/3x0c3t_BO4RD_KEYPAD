@@ -1,60 +1,36 @@
-#include <FS.h>
-#include <SPI.h>
-#include <TFT_eSPI.h>
-
-#include "config.h"
 #include "touch_calibration.h"
+#include "config.h"
+
+#include <FS.h>
 
 extern TFT_eSPI tft;
 
 void touch_calibrate()
 {
   uint16_t calData[5];
-
   uint8_t calDataOK = 0;
 
-  Serial.printf(
-    "[TOUCH] +%lums | calibration init\n",
-    millis()
-  );
+  Serial.println("[TOUCH] calibration init");
 
   if (!SPIFFS.begin())
   {
-    Serial.printf(
-      "[TOUCH] +%lums | SPIFFS FAIL | formatting\n",
-      millis()
-    );
+    Serial.println("[TOUCH] SPIFFS FAIL | formatting");
 
     SPIFFS.format();
 
-    if (SPIFFS.begin())
+    if (!SPIFFS.begin())
     {
-      Serial.printf(
-        "[TOUCH] +%lums | SPIFFS OK | after format\n",
-        millis()
-      );
-    }
-    else
-    {
-      Serial.printf(
-        "[TOUCH] +%lums | SPIFFS FAIL | abort\n",
-        millis()
-      );
+      Serial.println("[TOUCH] SPIFFS ERROR");
+      return;
     }
   }
-  else
-  {
-    Serial.printf(
-      "[TOUCH] +%lums | SPIFFS OK\n",
-      millis()
-    );
-  }
+
+  Serial.println("[TOUCH] SPIFFS OK");
 
   if (SPIFFS.exists(CALIBRATION_FILE))
   {
     Serial.printf(
-      "[TOUCH] +%lums | cal file FOUND | %s\n",
-      millis(),
+      "[TOUCH] cal file FOUND | %s\n",
       CALIBRATION_FILE
     );
 
@@ -62,14 +38,11 @@ void touch_calibrate()
     {
       SPIFFS.remove(CALIBRATION_FILE);
 
-      Serial.printf(
-        "[TOUCH] +%lums | cal file REMOVED | recalibration\n",
-        millis()
-      );
+      Serial.println("[TOUCH] calibration file DELETED");
     }
     else
     {
-      File f = SPIFFS.open(
+      fs::File f = SPIFFS.open(
         CALIBRATION_FILE,
         "r"
       );
@@ -86,9 +59,7 @@ void touch_calibrate()
           calDataOK = 1;
 
           Serial.printf(
-            "[TOUCH] +%lums | calibration LOADED | %u bytes | data=%u,%u,%u,%u,%u\n",
-            millis(),
-            bytes,
+            "[TOUCH] calibration LOADED | 14 bytes | data=%u,%u,%u,%u,%u\n",
             calData[0],
             calData[1],
             calData[2],
@@ -99,8 +70,7 @@ void touch_calibrate()
         else
         {
           Serial.printf(
-            "[TOUCH] +%lums | calibration INVALID | %u bytes\n",
-            millis(),
+            "[TOUCH] calibration INVALID | bytes=%u\n",
             bytes
           );
         }
@@ -109,128 +79,88 @@ void touch_calibrate()
       }
       else
       {
-        Serial.printf(
-          "[TOUCH] +%lums | cal file OPEN FAIL\n",
-          millis()
-        );
+        Serial.println("[TOUCH] calibration OPEN FAIL");
       }
     }
   }
   else
   {
-    Serial.printf(
-      "[TOUCH] +%lums | cal file NOT FOUND | %s\n",
-      millis(),
-      CALIBRATION_FILE
-    );
+    Serial.println("[TOUCH] cal file NOT FOUND");
   }
 
   if (calDataOK && !REPEAT_CAL)
   {
     tft.setTouch(calData);
 
-    Serial.printf(
-      "[TOUCH] +%lums | calibration APPLIED\n",
-      millis()
-    );
+    Serial.println("[TOUCH] calibration APPLIED");
+    Serial.println("[TOUCH] READY");
+
+    return;
   }
-  else
+
+  Serial.println("[TOUCH] calibration REQUIRED");
+
+  tft.fillScreen(TFT_BLACK);
+
+  tft.setCursor(20, 20);
+  tft.setTextFont(2);
+  tft.setTextSize(1);
+  tft.setTextColor(TFT_WHITE, TFT_BLACK);
+
+  tft.println("Touch corners");
+
+  tft.setTextFont(1);
+  tft.println();
+
+  if (REPEAT_CAL)
   {
-    Serial.printf(
-      "[TOUCH] +%lums | calibration START\n",
-      millis()
+    tft.setTextColor(TFT_RED, TFT_BLACK);
+    tft.println("REPEAT_CAL = true");
+  }
+
+  tft.calibrateTouch(
+    calData,
+    TFT_MAGENTA,
+    TFT_BLACK,
+    15
+  );
+
+  tft.setTextColor(
+    TFT_GREEN,
+    TFT_BLACK
+  );
+
+  tft.println("Calibration complete!");
+
+  fs::File f = SPIFFS.open(
+    CALIBRATION_FILE,
+    "w"
+  );
+
+  if (f)
+  {
+    f.write(
+      (const unsigned char *)calData,
+      14
     );
 
-    tft.fillScreen(TFT_BLACK);
-
-    tft.setCursor(20, 0);
-
-    tft.setTextFont(2);
-
-    tft.setTextSize(1);
-
-    tft.setTextColor(
-      TFT_WHITE,
-      TFT_BLACK
-    );
-
-    tft.println(
-      "Touch corners as indicated"
-    );
-
-    tft.setTextFont(1);
-
-    tft.println();
-
-    if (REPEAT_CAL)
-    {
-      tft.setTextColor(
-        TFT_RED,
-        TFT_BLACK
-      );
-
-      tft.println(
-        "Set REPEAT_CAL to false to stop this running again!"
-      );
-    }
-
-    tft.calibrateTouch(
-      calData,
-      TFT_MAGENTA,
-      TFT_BLACK,
-      15
-    );
+    f.close();
 
     Serial.printf(
-      "[TOUCH] +%lums | calibration DONE | data=%u,%u,%u,%u,%u\n",
-      millis(),
+      "[TOUCH] calibration SAVED | data=%u,%u,%u,%u,%u\n",
       calData[0],
       calData[1],
       calData[2],
       calData[3],
       calData[4]
     );
-
-    tft.setTextColor(
-      TFT_GREEN,
-      TFT_BLACK
-    );
-
-    tft.println(
-      "Calibration complete!"
-    );
-
-    File f = SPIFFS.open(
-      CALIBRATION_FILE,
-      "w"
-    );
-
-    if (f)
-    {
-      size_t bytes = f.write(
-        (const unsigned char *)calData,
-        14
-      );
-
-      f.close();
-
-      Serial.printf(
-        "[TOUCH] +%lums | calibration SAVED | %u bytes\n",
-        millis(),
-        bytes
-      );
-    }
-    else
-    {
-      Serial.printf(
-        "[TOUCH] +%lums | calibration SAVE FAIL\n",
-        millis()
-      );
-    }
+  }
+  else
+  {
+    Serial.println("[TOUCH] calibration SAVE FAIL");
   }
 
-  Serial.printf(
-    "[TOUCH] +%lums | READY\n",
-    millis()
-  );
+  tft.setTouch(calData);
+
+  Serial.println("[TOUCH] READY");
 }
