@@ -2,469 +2,334 @@
 #include "config.h"
 
 // ============================================================
-// 3x0c3t BO4RD KEYPAD
-// UI / Keypad
+// LABELS
 // ============================================================
 
-// Instance TFT définie dans KEYPAD.ino
-extern TFT_eSPI tft;
+static const char *keyLabel[NUM_KEYS] = {
+    "New",
+    "Del",
+    "Send",
 
-// ------------------------------------------------------------
-// Labels
-// ------------------------------------------------------------
+    "1",
+    "2",
+    "3",
 
-char keyLabel[15][6] = {
-  "New",
-  "Del",
-  "Send",
-  "1",
-  "2",
-  "3",
-  "4",
-  "5",
-  "6",
-  "7",
-  "8",
-  "9",
-  ".",
-  "0",
-  "#"
+    "4",
+    "5",
+    "6",
+
+    "7",
+    "8",
+    "9"
 };
 
-// ------------------------------------------------------------
-// Couleurs des boutons
-// ------------------------------------------------------------
-
-uint16_t keyColor[15] = {
-  UI_ERROR,       // New
-  UI_PANEL,       // Del
-  UI_OK,          // Send
-
-  UI_ACTION,      // 1
-  UI_ACTION,      // 2
-  UI_ACTION,      // 3
-  UI_ACTION,      // 4
-  UI_ACTION,      // 5
-  UI_ACTION,      // 6
-  UI_ACTION,      // 7
-  UI_ACTION,      // 8
-  UI_ACTION,      // 9
-  UI_ACTION,      // .
-  UI_ACTION,      // 0
-  UI_ACTION       // #
-};
-
-// ------------------------------------------------------------
-// Boutons TFT_eSPI
-// ------------------------------------------------------------
-
-TFT_eSPI_Button key[15];
-
-// ------------------------------------------------------------
-// Buffer clavier
-// ------------------------------------------------------------
-
-char numberBuffer[NUM_LEN + 1] = "";
-uint8_t numberIndex = 0;
-
 // ============================================================
-// Style d'un bouton
+// POSITIONS DES BOUTONS
 // ============================================================
 
-void drawButtonStyle(uint8_t b, bool pressed)
+static int16_t keyX[NUM_KEYS];
+static int16_t keyY[NUM_KEYS];
+
+// ============================================================
+// INITIALISATION DES POSITIONS
+// ============================================================
+
+static void calculateKeyPositions()
 {
-  if (b >= 15) return;
+    for (uint8_t row = 0; row < KEY_ROWS; row++)
+    {
+        for (uint8_t col = 0; col < KEY_COLS; col++)
+        {
+            uint8_t index = row * KEY_COLS + col;
 
-  int16_t x;
-  int16_t y;
-  uint16_t w;
-  uint16_t h;
+            if (index >= NUM_KEYS)
+                continue;
 
-  // Positions identiques à celles utilisées dans drawKeypad()
-  uint8_t row = b / 3;
-  uint8_t col = b % 3;
+            keyX[index] =
+                KEYPAD_X +
+                col * (KEY_W + KEY_GAP_X);
 
-  x = KEY_X + col * (KEY_W + KEY_SPACING_X);
-  y = KEY_Y + row * (KEY_H + KEY_SPACING_Y);
-
-  w = KEY_W;
-  h = KEY_H;
-
-  uint16_t fillColor;
-  uint16_t outlineColor;
-  uint16_t textColor;
-
-  // ----------------------------------------------------------
-  // Couleurs selon le type de bouton
-  // ----------------------------------------------------------
-
-  if (b == 0) {
-    // NEW
-    fillColor = pressed ? TFT_RED : UI_ERROR;
-    outlineColor = TFT_RED;
-    textColor = UI_TEXT;
-  }
-  else if (b == 1) {
-    // DEL
-    fillColor = pressed ? TFT_LIGHTGREY : UI_PANEL;
-    outlineColor = UI_TEXT_SECONDARY;
-    textColor = UI_TEXT;
-  }
-  else if (b == 2) {
-    // SEND
-    fillColor = pressed ? TFT_DARKGREEN : UI_OK;
-    outlineColor = UI_OK;
-    textColor = UI_TEXT;
-  }
-  else {
-    // Touches numériques
-    fillColor = pressed ? TFT_CYAN : UI_ACTION;
-    outlineColor = UI_ACCENT;
-    textColor = UI_TEXT;
-  }
-
-  // ----------------------------------------------------------
-  // Effacement de l'ancien bouton
-  // ----------------------------------------------------------
-
-  tft.fillRoundRect(
-    x,
-    y,
-    w,
-    h,
-    5,
-    fillColor
-  );
-
-  tft.drawRoundRect(
-    x,
-    y,
-    w,
-    h,
-    5,
-    outlineColor
-  );
-
-  // ----------------------------------------------------------
-  // Texte
-  // ----------------------------------------------------------
-
-  tft.setTextDatum(MC_DATUM);
-
-  // Police intégrée TFT_eSPI.
-  // Pas de GFXFF ici, puisque cette constante n'est pas
-  // disponible dans toutes les configurations TFT_eSPI.
-  tft.setTextFont(2);
-  tft.setTextSize(1);
-
-  tft.setTextColor(
-    textColor,
-    fillColor
-  );
-
-  tft.drawString(
-    keyLabel[b],
-    x + (w / 2),
-    y + (h / 2)
-  );
-
-  tft.setTextDatum(TL_DATUM);
+            keyY[index] =
+                KEYPAD_Y +
+                row * (KEY_H + KEY_GAP_Y);
+        }
+    }
 }
 
 // ============================================================
-// Dessin du keypad
+// STYLE BOUTON
+// ============================================================
+
+static void drawButtonStyle(uint8_t index, bool pressed)
+{
+    if (index >= NUM_KEYS)
+        return;
+
+    const int16_t x = keyX[index];
+    const int16_t y = keyY[index];
+
+    uint16_t fillColor;
+    uint16_t borderColor;
+    uint16_t textColor;
+
+    if (pressed)
+    {
+        fillColor   = UI_ACCENT;
+        borderColor = UI_ACCENT;
+        textColor   = TFT_BLACK;
+    }
+    else
+    {
+        fillColor   = UI_PANEL;
+        borderColor = UI_ACCENT;
+        textColor   = UI_TEXT;
+    }
+
+    // --------------------------------------------------------
+    // Effacement de l'ancien bouton
+    // --------------------------------------------------------
+
+    tft.fillRoundRect(
+        x,
+        y,
+        KEY_W,
+        KEY_H,
+        6,
+        UI_BG
+    );
+
+    // --------------------------------------------------------
+    // Fond
+    // --------------------------------------------------------
+
+    tft.fillRoundRect(
+        x,
+        y,
+        KEY_W,
+        KEY_H,
+        6,
+        fillColor
+    );
+
+    // --------------------------------------------------------
+    // Bordure
+    // --------------------------------------------------------
+
+    tft.drawRoundRect(
+        x,
+        y,
+        KEY_W,
+        KEY_H,
+        6,
+        borderColor
+    );
+
+    // --------------------------------------------------------
+    // Texte
+    // --------------------------------------------------------
+
+    tft.setTextFont(1);
+    tft.setTextSize(KEY_TEXTSIZE);
+
+    tft.setTextColor(
+        textColor,
+        fillColor
+    );
+
+    tft.setTextDatum(MC_DATUM);
+
+    tft.drawString(
+        keyLabel[index],
+        x + KEY_W / 2,
+        y + KEY_H / 2
+    );
+
+    tft.setTextDatum(TL_DATUM);
+}
+
+// ============================================================
+// AFFICHAGE DU CLAVIER
 // ============================================================
 
 void drawKeypad()
 {
-  Serial.println("[UI] drawing keypad");
+    calculateKeyPositions();
 
-  for (uint8_t row = 0; row < 5; row++) {
+    Serial.println("[UI] keypad layout:");
 
-    for (uint8_t col = 0; col < 3; col++) {
+    for (uint8_t i = 0; i < NUM_KEYS; i++)
+    {
+        drawButtonStyle(i, false);
 
-      uint8_t b = col + row * 3;
-
-      if (b >= 15) continue;
-
-      uint16_t x =
-        KEY_X + col * (KEY_W + KEY_SPACING_X);
-
-      uint16_t y =
-        KEY_Y + row * (KEY_H + KEY_SPACING_Y);
-
-      // Initialisation logique du bouton.
-      //
-      // TFT_eSPI_Button demande un char* et non const char*.
-      // keyLabel est donc volontairement un tableau de char.
-      key[b].initButton(
-        &tft,
-        x + KEY_W / 2,
-        y + KEY_H / 2,
-        KEY_W,
-        KEY_H,
-        UI_ACCENT,
-        keyColor[b],
-        UI_TEXT,
-        keyLabel[b],
-        1
-      );
-
-      drawButtonStyle(b, false);
-
-      Serial.printf(
-        "[UI] btn=%u \"%s\" | x=%u y=%u w=%u h=%u\n",
-        b,
-        keyLabel[b],
-        x,
-        y,
-        KEY_W,
-        KEY_H
-      );
+        Serial.printf(
+            "[UI] btn=%u \"%s\" | x=%d y=%d w=%d h=%d\r\n",
+            i,
+            keyLabel[i],
+            keyX[i],
+            keyY[i],
+            KEY_W,
+            KEY_H
+        );
     }
-  }
-
-  Serial.println("[UI] keypad OK");
 }
 
 // ============================================================
-// Affichage de la valeur saisie
+// AFFICHAGE DE LA ZONE DE RETOUR
 // ============================================================
 
 void updateDisplay()
 {
-  // Zone d'affichage
-  tft.fillRoundRect(
-    DISPLAY_X,
-    DISPLAY_Y,
-    DISPLAY_W,
-    DISPLAY_H,
-    5,
-    UI_PANEL
-  );
+    // --------------------------------------------------------
+    // Fond
+    // --------------------------------------------------------
 
-  tft.drawRoundRect(
-    DISPLAY_X,
-    DISPLAY_Y,
-    DISPLAY_W,
-    DISPLAY_H,
-    5,
-    UI_ACCENT
-  );
+    tft.fillRoundRect(
+        DISPLAY_X,
+        DISPLAY_Y,
+        DISPLAY_W,
+        DISPLAY_H,
+        5,
+        UI_PANEL
+    );
 
-  // Petite indication
-  tft.setTextDatum(TL_DATUM);
-  tft.setTextFont(1);
-  tft.setTextSize(1);
+    // --------------------------------------------------------
+    // Bordure
+    // --------------------------------------------------------
 
-  tft.setTextColor(
-    UI_TEXT_SECONDARY,
-    UI_PANEL
-  );
-
-  tft.drawString(
-    "INPUT",
-    DISPLAY_X + 6,
-    DISPLAY_Y + 5
-  );
-
-  // Valeur
-  tft.setTextDatum(MR_DATUM);
-
-  tft.setTextFont(2);
-  tft.setTextSize(1);
-
-  tft.setTextColor(
-    UI_VALUE,
-    UI_PANEL
-  );
-
-  tft.drawString(
-    numberBuffer,
-    DISPLAY_X + DISPLAY_W - 7,
-    DISPLAY_Y + DISPLAY_H / 2 + 4
-  );
-
-  tft.setTextDatum(TL_DATUM);
+    tft.drawRoundRect(
+        DISPLAY_X,
+        DISPLAY_Y,
+        DISPLAY_W,
+        DISPLAY_H,
+        5,
+        UI_ACCENT
+    );
 }
 
 // ============================================================
-// Gestion du clavier tactile
+// MISE À JOUR DU CLAVIER TACTILE
 // ============================================================
 
 void updateKeypad(
-  uint16_t t_x,
-  uint16_t t_y,
-  bool pressed
+    uint16_t touchX,
+    uint16_t touchY,
+    bool pressed
 )
 {
-  // ----------------------------------------------------------
-  // Mise à jour des états des boutons
-  // ----------------------------------------------------------
+    if (!pressed)
+        return;
 
-  for (uint8_t b = 0; b < 15; b++) {
+    for (uint8_t i = 0; i < NUM_KEYS; i++)
+    {
+        const int16_t x = keyX[i];
+        const int16_t y = keyY[i];
 
-    bool hit =
-      pressed &&
-      key[b].contains(t_x, t_y);
+        if (
+            touchX >= x &&
+            touchX < x + KEY_W &&
+            touchY >= y &&
+            touchY < y + KEY_H
+        )
+        {
+            Serial.printf(
+                "[KEY] %u \"%s\" | touch=%u,%u | rect=%d,%d,%d,%d\r\n",
+                i,
+                keyLabel[i],
+                touchX,
+                touchY,
+                x,
+                y,
+                KEY_W,
+                KEY_H
+            );
 
-    key[b].press(hit);
-  }
+            drawButtonStyle(i, true);
 
-  // ----------------------------------------------------------
-  // Détection des événements
-  // ----------------------------------------------------------
+            // ------------------------------------------------
+            // Affichage de la touche appuyée
+            // ------------------------------------------------
 
-  for (uint8_t b = 0; b < 15; b++) {
+            tft.fillRoundRect(
+                DISPLAY_X + 2,
+                DISPLAY_Y + 2,
+                DISPLAY_W - 4,
+                DISPLAY_H - 4,
+                4,
+                UI_PANEL
+            );
 
-    if (key[b].justPressed()) {
+            tft.setTextFont(1);
+            tft.setTextSize(2);
 
-      Serial.printf(
-        "[KEY] PRESS | btn=%u | \"%s\" | touch=%u,%u | value=\"%s\"\n",
-        b,
-        keyLabel[b],
-        t_x,
-        t_y,
-        numberBuffer
-      );
+            tft.setTextColor(
+                UI_VALUE,
+                UI_PANEL
+            );
 
-      drawButtonStyle(b, true);
+            tft.setTextDatum(MC_DATUM);
 
-      // ------------------------------------------------------
-      // Touches numériques
-      // ------------------------------------------------------
+            tft.drawString(
+                keyLabel[i],
+                DISPLAY_X + DISPLAY_W / 2,
+                DISPLAY_Y + DISPLAY_H / 2
+            );
 
-      if (b >= 3) {
+            tft.setTextDatum(TL_DATUM);
 
-        if (numberIndex < NUM_LEN) {
+            delay(80);
 
-          numberBuffer[numberIndex] =
-            keyLabel[b][0];
+            drawButtonStyle(i, false);
 
-          numberIndex++;
-
-          numberBuffer[numberIndex] = '\0';
-
-          Serial.printf(
-            "[KEY] INPUT | \"%s\" | len=%u\n",
-            numberBuffer,
-            numberIndex
-          );
+            return;
         }
-
-        updateDisplay();
-      }
-
-      // ------------------------------------------------------
-      // DEL
-      // ------------------------------------------------------
-
-      if (b == 1) {
-
-        if (numberIndex > 0) {
-          numberIndex--;
-
-          numberBuffer[numberIndex] = '\0';
-        }
-
-        Serial.printf(
-          "[KEY] DELETE | value=\"%s\" | len=%u\n",
-          numberBuffer,
-          numberIndex
-        );
-
-        updateDisplay();
-      }
-
-      // ------------------------------------------------------
-      // SEND
-      // ------------------------------------------------------
-
-      if (b == 2) {
-
-        Serial.printf(
-          "[KEY] SEND | value=\"%s\" | len=%u\n",
-          numberBuffer,
-          numberIndex
-        );
-
-        status("SENT");
-
-        Serial.print("[DATA] ");
-        Serial.println(numberBuffer);
-      }
-
-      // ------------------------------------------------------
-      // NEW
-      // ------------------------------------------------------
-
-      if (b == 0) {
-
-        numberIndex = 0;
-        numberBuffer[0] = '\0';
-
-        Serial.println("[KEY] NEW | input cleared");
-
-        updateDisplay();
-      }
     }
-
-    // --------------------------------------------------------
-    // Relâchement
-    // --------------------------------------------------------
-
-    if (key[b].justReleased()) {
-
-      Serial.printf(
-        "[KEY] RELEASE | btn=%u | \"%s\"\n",
-        b,
-        keyLabel[b]
-      );
-
-      drawButtonStyle(b, false);
-    }
-  }
 }
 
 // ============================================================
-// Barre de statut
+// STATUS
 // ============================================================
 
-void status(const char *msg)
+void status(const char *message)
 {
-  // Zone de statut sous l'affichage.
-  // Elle ne doit surtout pas recouvrir les boutons New / Del /
-  // Send. Les humains ont déjà assez de problèmes avec les
-  // rectangles qui se dessinent au mauvais endroit.
+    if (!message)
+        return;
 
-  tft.fillRect(
-    STATUS_X - STATUS_W / 2,
-    STATUS_Y,
-    STATUS_W,
-    STATUS_H,
-    UI_BG
-  );
+    // --------------------------------------------------------
+    // Zone status
+    // --------------------------------------------------------
 
-  tft.setTextDatum(MC_DATUM);
+    tft.fillRect(
+        STATUS_X - STATUS_W / 2,
+        STATUS_Y - STATUS_H / 2,
+        STATUS_W,
+        STATUS_H,
+        UI_BG
+    );
 
-  tft.setTextFont(1);
-  tft.setTextSize(1);
+    // --------------------------------------------------------
+    // Texte
+    // --------------------------------------------------------
 
-  tft.setTextColor(
-    UI_TEXT_SECONDARY,
-    UI_BG
-  );
+    tft.setTextFont(1);
+    tft.setTextSize(1);
 
-  tft.drawString(
-    msg,
-    STATUS_X,
-    STATUS_Y + STATUS_H / 2
-  );
+    tft.setTextColor(
+        UI_TEXT_SECONDARY,
+        UI_BG
+    );
 
-  tft.setTextDatum(TL_DATUM);
+    tft.setTextDatum(MC_DATUM);
 
-  Serial.printf(
-    "[UI] STATUS | \"%s\"\n",
-    msg
-  );
+    tft.drawString(
+        message,
+        STATUS_X,
+        STATUS_Y
+    );
+
+    tft.setTextDatum(TL_DATUM);
+
+    Serial.printf(
+        "[STATUS] %s\r\n",
+        message
+    );
 }
