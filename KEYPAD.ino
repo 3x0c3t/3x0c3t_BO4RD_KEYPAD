@@ -17,16 +17,35 @@ void setup()
 
   tft.init();
 
-  tft.setRotation(0);
+  tft.setRotation(TFT_ROTATION);
 
   touch_calibrate();
 
   tft.fillScreen(TFT_BLACK);
 
-  tft.fillRect(0, 0, 240, 320, TFT_DARKGREY);
+  tft.fillRect(
+    0,
+    0,
+    SCREEN_WIDTH,
+    SCREEN_HEIGHT,
+    TFT_DARKGREY
+  );
 
-  tft.fillRect(DISP_X, DISP_Y, DISP_W, DISP_H, TFT_BLACK);
-  tft.drawRect(DISP_X, DISP_Y, DISP_W, DISP_H, TFT_WHITE);
+  tft.fillRect(
+    DISP_X,
+    DISP_Y,
+    DISP_W,
+    DISP_H,
+    TFT_BLACK
+  );
+
+  tft.drawRect(
+    DISP_X,
+    DISP_Y,
+    DISP_W,
+    DISP_H,
+    TFT_WHITE
+  );
 
   drawKeypad();
 }
@@ -75,7 +94,9 @@ void loop()
         if (numberIndex < NUM_LEN)
         {
           numberBuffer[numberIndex] = keyLabel[b][0];
+
           numberIndex++;
+
           numberBuffer[numberIndex] = 0;
         }
 
@@ -89,6 +110,7 @@ void loop()
         if (numberIndex > 0)
         {
           numberIndex--;
+
           numberBuffer[numberIndex] = 0;
         }
 
@@ -98,6 +120,7 @@ void loop()
       if (b == 2)
       {
         status("Sent value to serial port");
+
         Serial.println(numberBuffer);
       }
 
@@ -111,7 +134,9 @@ void loop()
       }
 
       tft.setTextDatum(TL_DATUM);
+
       tft.setFreeFont(&FreeSans18pt7b);
+
       tft.setTextColor(DISP_TCOLOR);
 
       int xwidth = tft.drawString(
@@ -120,13 +145,16 @@ void loop()
         DISP_Y + 12
       );
 
-      tft.fillRect(
-        DISP_X + 4 + xwidth,
-        DISP_Y + 1,
-        DISP_W - xwidth - 5,
-        DISP_H - 2,
-        TFT_BLACK
-      );
+      if (xwidth < DISP_W - 5)
+      {
+        tft.fillRect(
+          DISP_X + 4 + xwidth,
+          DISP_Y + 1,
+          DISP_W - xwidth - 5,
+          DISP_H - 2,
+          TFT_BLACK
+        );
+      }
 
       delay(10);
     }

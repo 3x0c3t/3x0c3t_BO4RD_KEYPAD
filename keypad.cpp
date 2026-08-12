@@ -78,7 +78,7 @@ void drawKeypad()
 
 void status(const char *msg)
 {
-  tft.setTextPadding(240);
+  tft.setTextPadding(SCREEN_WIDTH);
 
   tft.setTextColor(TFT_WHITE, TFT_DARKGREY);
 

@@ -3,6 +3,11 @@
 
 #include <TFT_eSPI.h>
 
+#define TFT_ROTATION 2
+
+#define SCREEN_WIDTH 240
+#define SCREEN_HEIGHT 320
+
 #define CALIBRATION_FILE "/TouchCalData1"
 
 #define REPEAT_CAL false
