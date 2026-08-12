@@ -58,10 +58,16 @@ void drawKeypad()
         tft.setFreeFont(LABEL2_FONT);
       }
 
+      uint16_t x =
+        KEY_X + col * (KEY_W + KEY_SPACING_X);
+
+      uint16_t y =
+        KEY_Y + row * (KEY_H + KEY_SPACING_Y);
+
       key[b].initButton(
         &tft,
-        KEY_X + col * (KEY_W + KEY_SPACING_X),
-        KEY_Y + row * (KEY_H + KEY_SPACING_Y),
+        x,
+        y,
         KEY_W,
         KEY_H,
         TFT_WHITE,
@@ -72,6 +78,17 @@ void drawKeypad()
       );
 
       key[b].drawButton();
+
+      Serial.printf(
+        "[UI]     +%lums | btn=%u \"%s\" | x=%u y=%u w=%u h=%u\n",
+        millis(),
+        b,
+        keyLabel[b],
+        x,
+        y,
+        KEY_W,
+        KEY_H
+      );
     }
   }
 }
@@ -80,7 +97,10 @@ void status(const char *msg)
 {
   tft.setTextPadding(SCREEN_WIDTH);
 
-  tft.setTextColor(TFT_WHITE, TFT_DARKGREY);
+  tft.setTextColor(
+    TFT_WHITE,
+    TFT_DARKGREY
+  );
 
   tft.setTextFont(0);
 
@@ -88,5 +108,9 @@ void status(const char *msg)
 
   tft.setTextSize(1);
 
-  tft.drawString(msg, STATUS_X, STATUS_Y);
+  tft.drawString(
+    msg,
+    STATUS_X,
+    STATUS_Y
+  );
 }

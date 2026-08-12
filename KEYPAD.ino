@@ -13,15 +13,33 @@ uint8_t numberIndex = 0;
 
 void setup()
 {
-  Serial.begin(9600);
+  Serial.begin(115200);
+
+  delay(100);
+
+  Serial.println();
+  Serial.println("[SYS] BO4RD KEYPAD v1.0");
 
   tft.init();
 
   tft.setRotation(TFT_ROTATION);
 
+  Serial.printf(
+    "[TFT] +%lums | init OK | rot=%d | size=%dx%d\n",
+    millis(),
+    TFT_ROTATION,
+    tft.width(),
+    tft.height()
+  );
+
   touch_calibrate();
 
   tft.fillScreen(TFT_BLACK);
+
+  Serial.printf(
+    "[UI] +%lums | background OK\n",
+    millis()
+  );
 
   tft.fillRect(
     0,
@@ -47,15 +65,40 @@ void setup()
     TFT_WHITE
   );
 
+  Serial.printf(
+    "[UI] +%lums | display OK\n",
+    millis()
+  );
+
   drawKeypad();
+
+  Serial.printf(
+    "[UI] +%lums | keypad OK | buttons=15\n",
+    millis()
+  );
+
+  Serial.printf(
+    "[SYS] +%lums | READY\n",
+    millis()
+  );
 }
 
 void loop()
 {
   uint16_t t_x = 0;
   uint16_t t_y = 0;
+  uint16_t raw_x = 0;
+  uint16_t raw_y = 0;
+  uint16_t touchZ = 0;
 
   bool pressed = tft.getTouch(&t_x, &t_y);
+
+  if (pressed)
+  {
+    tft.getTouchRaw(&raw_x, &raw_y);
+
+    touchZ = tft.getTouchRawZ();
+  }
 
   for (uint8_t b = 0; b < 15; b++)
   {
@@ -83,11 +126,33 @@ void loop()
     if (key[b].justReleased())
     {
       key[b].drawButton();
+
+      Serial.printf(
+        "[TOUCH] +%lums | raw=%u,%u | xy=%u,%u | z=%u | btn=%u \"%s\" | RELEASE\n",
+        millis(),
+        raw_x,
+        raw_y,
+        t_x,
+        t_y,
+        touchZ,
+        b,
+        keyLabel[b]
+      );
     }
 
     if (key[b].justPressed())
     {
       key[b].drawButton(true);
+
+      Serial.printf(
+        "[TOUCH] +%lums | raw=%u,%u | xy=%u,%u | z=%u | btn=%u \"%s\" | PRESS\n",
+        millis(),
+        raw_x,
+        raw_y,
+        touchZ,
+        b,
+        keyLabel[b]
+      );
 
       if (b >= 3)
       {
@@ -101,6 +166,13 @@ void loop()
         }
 
         status("");
+
+        Serial.printf(
+          "[KEY]   +%lums | \"%s\" | buffer=\"%s\"\n",
+          millis(),
+          keyLabel[b],
+          numberBuffer
+        );
       }
 
       if (b == 1)
@@ -115,11 +187,23 @@ void loop()
         }
 
         status("");
+
+        Serial.printf(
+          "[KEY]   +%lums | DEL | buffer=\"%s\"\n",
+          millis(),
+          numberBuffer
+        );
       }
 
       if (b == 2)
       {
         status("Sent value to serial port");
+
+        Serial.printf(
+          "[KEY]   +%lums | SEND | buffer=\"%s\"\n",
+          millis(),
+          numberBuffer
+        );
 
         Serial.println(numberBuffer);
       }
@@ -131,6 +215,11 @@ void loop()
         numberIndex = 0;
 
         numberBuffer[numberIndex] = 0;
+
+        Serial.printf(
+          "[KEY]   +%lums | NEW | buffer=\"\"\n",
+          millis()
+        );
       }
 
       tft.setTextDatum(TL_DATUM);
